@@ -10,4 +10,5 @@ end
 
 function render_thread_render(data)
   print(data.a)
+  c_draw()
 end

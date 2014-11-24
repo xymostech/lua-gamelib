@@ -96,6 +96,23 @@ struct thread_data {
     int done;
 };
 
+void register_cfunction(lua_State *L, lua_CFunction func,
+                        struct thread_data *d, const char *name) {
+    lua_pushlightuserdata(L, (void *)d);
+    lua_pushcclosure(L, func, 1);
+    lua_setglobal(L, name);
+}
+
+int lua_draw_draw_wrapper(lua_State *L) {
+    void *d = lua_touserdata(L, lua_upvalueindex(1));
+
+    struct thread_data *data = (struct thread_data *)d;
+
+    draw_draw(data->draw_data);
+
+    return 0;
+}
+
 void print_state(const char *prefix, struct thread_data *d) {
     (void)prefix;
     (void)d;
@@ -219,8 +236,6 @@ void render_thread(struct thread_data *d) {
         render(d->lua_data->renderL);
         print_state("render: done with render", d);
 
-        draw_draw(d->draw_data);
-
         SDL_Delay(16);
 
         print_state("render: locking", d);
@@ -291,6 +306,8 @@ int main() {
     lua_xmove(lua_data.renderL, lua_data.updateL, 1);
 
     struct thread_data data = {0};
+
+    register_cfunction(lua_data.renderL, lua_draw_draw_wrapper, &data, "c_draw");
 
     data.lua_data = &lua_data;
     data.draw_data = &draw_data;
