@@ -89,6 +89,7 @@ void startup_lua(lua_State **LL) {
 
 struct thread_data {
     struct lua_data *lua_data;
+    struct draw_data *draw_data;
     pthread_mutex_t mutex;
     pthread_cond_t condition;
     int other_is_finished;
@@ -96,6 +97,8 @@ struct thread_data {
 };
 
 void print_state(const char *prefix, struct thread_data *d) {
+    (void)prefix;
+    (void)d;
 #if DEBUG
     printf("%s (other: %d, done: %d)\n", prefix, d->other_is_finished, d->done);
 #endif
@@ -216,6 +219,8 @@ void render_thread(struct thread_data *d) {
         render(d->lua_data->renderL);
         print_state("render: done with render", d);
 
+        draw_draw(d->draw_data);
+
         SDL_Delay(16);
 
         print_state("render: locking", d);
@@ -288,6 +293,7 @@ int main() {
     struct thread_data data = {0};
 
     data.lua_data = &lua_data;
+    data.draw_data = &draw_data;
 
     handle_posix_error(pthread_mutex_init(&data.mutex, NULL),
                        "Error creating mutex", 1);

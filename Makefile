@@ -1,6 +1,9 @@
 .PHONY: all clean
 all: lua-game
 
+CFLAGS = -Wall -Wextra -g
+LDFLAGS = -llua -lSDL2 -pthread -lGL
+
 OBJECTS = \
 	main.o \
 	draw.o \
@@ -9,11 +12,11 @@ OBJECTS = \
 -include $(OBJECTS:.o=.d)
 
 %.o: %.c
-	clang -g -c -o $@ $<
+	clang -c $(CFLAGS) -o $@ $<
 	gcc -MM $*.c -MF $*.d
 
 lua-game: $(OBJECTS)
-	clang -g -o $@ $^ -llua -lSDL2 -pthread
+	clang $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 clean:
 	rm -f lua-game lua-thread-test *.o *.d
