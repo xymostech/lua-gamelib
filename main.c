@@ -89,10 +89,6 @@ void startup_lua(lua_State **LL) {
 struct thread_data {
     struct lua_data *lua_data;
     struct draw_data *draw_data;
-    pthread_mutex_t mutex;
-    pthread_cond_t condition;
-    int other_is_finished;
-    int done;
 };
 
 void register_cfunction(lua_State *L, lua_CFunction func,
@@ -112,11 +108,9 @@ int lua_draw_draw_wrapper(lua_State *L) {
     return 0;
 }
 
-void print_state(const char *prefix, struct thread_data *d) {
-    debugp("%s (other: %d, done: %d)\n", prefix, d->other_is_finished, d->done);
-}
-
 int update(lua_State *L) {
+    debugp("Updating...");
+
     lua_getglobal(L, "update_thread_update");
     if (!lua_isfunction(L, -1)) {
         fprintf(stderr, "Error: update_thread_update isn't a function\n");
@@ -132,86 +126,14 @@ int update(lua_State *L) {
     int done = lua_toboolean(L, -1);
     lua_pop(L, 1);
 
+    debugp("Updated. Done: %d", done);
+
     return done;
 }
 
-void transfer(struct lua_data *lua_data) {
-    lua_pushvalue(lua_data->updateL, -1);
-    lua_xmove(lua_data->updateL, lua_data->renderL, 1);
-}
-
-void *update_thread(void *data) {
-    struct thread_data *d = (struct thread_data *)data;
-
-    int done = 0;
-    pthread_cleanup_push(cleanup_set_done, &d->done);
-
-    print_state("update: before loop", d);
-
-    while (!done) {
-        print_state("update: updating", d);
-        done = update(d->lua_data->updateL);
-        print_state("update: done updating", d);
-
-        SDL_Event event;
-        while (SDL_PollEvent(&event) == 1) {
-            switch (event.type) {
-                case SDL_QUIT:
-                    done = 1;
-                    break;
-
-                default:
-                    break;
-            }
-        }
-
-        print_state("update: before lock", d);
-        handle_posix_error(pthread_mutex_lock(&d->mutex),
-                           "Error locking mutex (update)", 1);
-        pthread_cleanup_push(cleanup_unlock_mutex, &d->mutex);
-        print_state("update: got lock", d);
-
-
-        if (d->other_is_finished) {
-            print_state("update: other was finished", d);
-            d->other_is_finished = 0;
-
-            print_state("update: transfer", d);
-            d->done = done;
-            transfer(d->lua_data);
-
-            print_state("update: signalling", d);
-            handle_posix_error(pthread_cond_signal(&d->condition),
-                               "Error signalling", 1);
-        } else {
-            print_state("update: we finished first", d);
-            d->other_is_finished = 1;
-
-            print_state("update: waiting", d);
-            handle_posix_error(pthread_cond_wait(&d->condition, &d->mutex),
-                               "Error waiting on condition", 1);
-            print_state("update: finished waiting", d);
-
-            print_state("update: transfer", d);
-            d->done = done;
-            transfer(d->lua_data);
-
-            print_state("update: signalling", d);
-            handle_posix_error(pthread_cond_signal(&d->condition),
-                               "Error signalling", 1);
-        }
-
-        print_state("update: unlocking", d);
-        pthread_cleanup_pop(1);
-    }
-
-    print_state("update: done with loop", d);
-    pthread_cleanup_pop(1);
-
-    pthread_exit(NULL);
-}
-
 void render(lua_State *L) {
+    debugp("Rendering...");
+
     lua_getglobal(L, "render_thread_render");
     if (!lua_isfunction(L, -1)) {
         fprintf(stderr, "Error: render_thread_render isn't a function\n");
@@ -223,55 +145,39 @@ void render(lua_State *L) {
                      "Error calling render_thread_render", L, 1);
 }
 
-void render_thread(struct thread_data *d) {
-    print_state("render: before loop", d);
+void transfer(struct lua_data *lua_data) {
+    lua_pushvalue(lua_data->updateL, -1);
+    lua_xmove(lua_data->updateL, lua_data->renderL, 1);
+}
 
-    while (!d->done) {
-        print_state("render: rendering", d);
+void *update_thread(void *data) {
+    struct thread_data *d = (struct thread_data *)data;
+
+    int done = 0;
+
+    while (!done) {
+        done = update(d->lua_data->updateL);
+
+        transfer(d->lua_data);
+
         render(d->lua_data->renderL);
-        print_state("render: done with render", d);
 
-        SDL_Delay(16);
+        SDL_Event event;
+        while (SDL_PollEvent(&event) == 1) {
+            switch (event.type) {
+                case SDL_QUIT:
+                    debugp("Got quit event");
+                    done = 1;
+                    break;
 
-        print_state("render: locking", d);
-        handle_posix_error(pthread_mutex_lock(&d->mutex),
-                           "Error locking mutex (render)", 1);
-        pthread_cleanup_push(cleanup_unlock_mutex, &d->mutex);
-        print_state("render: got lock", d);
-
-        if (d->other_is_finished) {
-            print_state("render: other was finished first", d);
-            if (d->done) {
-                break;
+                default:
+                    break;
             }
-
-            d->other_is_finished = 0;
-
-            print_state("render: signalling", d);
-            handle_posix_error(pthread_cond_signal(&d->condition),
-                               "Error signalling", 1);
-            print_state("render: now waiting", d);
-            handle_posix_error(pthread_cond_wait(&d->condition, &d->mutex),
-                               "Error waiting on condition", 1);
-            print_state("render: done waiting", d);
-        } else {
-            print_state("render: we finished first", d);
-            if (d->done) {
-                break;
-            }
-
-            d->other_is_finished = 1;
-
-            print_state("render: waiting", d);
-            handle_posix_error(pthread_cond_wait(&d->condition, &d->mutex),
-                               "Error waiting on condition", 1);
         }
 
-        print_state("render: unlocking", d);
-        pthread_cleanup_pop(1);
+        SDL_Delay(16);
     }
 
-    print_state("render: out of loop", d);
     pthread_exit(NULL);
 }
 
@@ -307,23 +213,8 @@ int main() {
     data.lua_data = &lua_data;
     data.draw_data = &draw_data;
 
-    handle_posix_error(pthread_mutex_init(&data.mutex, NULL),
-                       "Error creating mutex", 1);
-    pthread_cleanup_push(cleanup_destroy_mutex, &data.mutex);
+    update_thread(&data);
 
-    handle_posix_error(pthread_cond_init(&data.condition, NULL),
-                       "Error creating condition", 1);
-    pthread_cleanup_push(cleanup_destroy_cond, &data.condition);
-
-    pthread_t update;
-    handle_posix_error(
-        pthread_create(&update, NULL, update_thread, (void*)&data),
-        "Error creating thread", 1);
-
-    render_thread(&data);
-
-    pthread_cleanup_pop(1); // cleanup cond
-    pthread_cleanup_pop(1); // cleanup mutex
     pthread_cleanup_pop(1); // cleanup draw
     pthread_cleanup_pop(1); // cleanup lua
 }
