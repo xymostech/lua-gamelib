@@ -3,11 +3,10 @@
 
 #include "lua.h"
 #include "draw.h"
+#include "debug.h"
 
 // pthreads
 #include <pthread.h>
-
-#define DEBUG 0
 
 int handle_lua_error(int val, const char *prefix, lua_State *L, int exit) {
     if (val != LUA_OK) {
@@ -114,11 +113,7 @@ int lua_draw_draw_wrapper(lua_State *L) {
 }
 
 void print_state(const char *prefix, struct thread_data *d) {
-    (void)prefix;
-    (void)d;
-#if DEBUG
-    printf("%s (other: %d, done: %d)\n", prefix, d->other_is_finished, d->done);
-#endif
+    debugp("%s (other: %d, done: %d)\n", prefix, d->other_is_finished, d->done);
 }
 
 int update(lua_State *L) {
@@ -305,7 +300,7 @@ int main() {
     lua_pushvalue(lua_data.renderL, -1);
     lua_xmove(lua_data.renderL, lua_data.updateL, 1);
 
-    struct thread_data data = {0};
+    struct thread_data data;
 
     register_cfunction(lua_data.renderL, lua_draw_draw_wrapper, &data, "c_draw");
 

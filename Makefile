@@ -1,7 +1,7 @@
 .PHONY: all clean
 all: lua-game
 
-CFLAGS = -Wall -Wextra -g
+CFLAGS = -Wall -Wextra -Werror -g -DDEBUG
 LDFLAGS = -llua -lSDL2 -pthread -lGL
 
 OBJECTS = \

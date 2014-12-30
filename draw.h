@@ -10,6 +10,7 @@
 
 struct draw_data {
     SDL_Window *window;
+    SDL_GLContext context;
 
     GLuint program;
     GLuint vertex_buffer;

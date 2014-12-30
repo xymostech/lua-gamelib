@@ -31,7 +31,7 @@ GLuint create_shader(GLenum shader_type, const char *file_name) {
     // TODO(emily): error checking
     fread(data, 1, file_size, f);
 
-    glShaderSource(shader, 1, &data, NULL);
+    glShaderSource(shader, 1, (const GLchar * const *)&data, NULL);
     glCompileShader(shader);
 
     GLint status;
@@ -98,6 +98,9 @@ const float vertex_positions[] = {
     0.75f, 0.75f, 0.0f, 1.0f,
     0.75f, -0.75f, 0.0f, 1.0f,
     -0.75f, -0.75f, 0.0f, 1.0f,
+    1.0f,    0.0f, 0.0f, 1.0f,
+    0.0f,    1.0f, 0.0f, 1.0f,
+    0.0f,    0.0f, 1.0f, 1.0f,
 };
 
 int draw_setup(struct draw_data *data) {
@@ -127,7 +130,6 @@ int draw_setup(struct draw_data *data) {
         return 1;
     }
 
-    // TODO(emily): clean this up
     SDL_GLContext context = SDL_GL_CreateContext(window);
 
     if (!context) {
@@ -160,6 +162,8 @@ int draw_setup(struct draw_data *data) {
     glBindVertexArray(vertex_array);
 
     data->window = window;
+    data->context = context;
+
     data->program = program;
     data->vertex_buffer = vertex_buffer;
     data->vertex_array = vertex_array;
@@ -170,8 +174,12 @@ int draw_setup(struct draw_data *data) {
 void draw_cleanup(struct draw_data *data) {
     // TODO(emily): cleanup gl stuff
 
+    SDL_GL_DeleteContext(data->context);
+
     SDL_DestroyWindow(data->window);
     SDL_Quit();
+
+    memset(data, 0x0, sizeof(*data));
 }
 
 void draw_cleanup_wrapper(void *d) {
@@ -187,11 +195,14 @@ void draw_draw(struct draw_data *data) {
 
     glBindBuffer(GL_ARRAY_BUFFER, data->vertex_buffer);
     glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*)48);
 
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
     glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
     glUseProgram(0);
 
     SDL_GL_SwapWindow(data->window);
