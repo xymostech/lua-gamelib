@@ -185,12 +185,13 @@ int main() {
     int err;
 
     struct lua_data lua_data;
-    if ((err = lua_setup(&lua_data)) != 0) {
+    struct draw_data draw_data;
+
+    if ((err = lua_setup(&lua_data, &draw_data)) != 0) {
         pthread_exit(NULL);
     }
     pthread_cleanup_push(lua_cleanup_wrapper, &lua_data);
 
-    struct draw_data draw_data;
     if ((err = draw_setup(&draw_data)) != 0) {
         pthread_exit(NULL);
     }

@@ -1,4 +1,5 @@
 #include "draw.h"
+#include "debug.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -188,22 +189,7 @@ void draw_cleanup_wrapper(void *d) {
 }
 
 void draw_draw(struct draw_data *data) {
-    glClearColor(0.0, 0.0, 0.0, 0.0);
-    glClear(GL_COLOR_BUFFER_BIT);
-
     glUseProgram(data->program);
 
     glBindBuffer(GL_ARRAY_BUFFER, data->vertex_buffer);
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*)48);
-
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
-    glUseProgram(0);
-
-    SDL_GL_SwapWindow(data->window);
 }

@@ -7,7 +7,8 @@ LDFLAGS = -llua -lSDL2 -pthread -lGL
 OBJECTS = \
 	main.o \
 	draw.o \
-	lua.o
+	lua.o \
+	draw_interface.o
 
 -include $(OBJECTS:.o=.d)
 
