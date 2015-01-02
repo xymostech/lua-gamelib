@@ -33,27 +33,32 @@ function startup()
   vertex_buffer = gl.create_buffer_object()
   setup_data(vertex_buffer)
 
+  offset_uniform = gl.get_uniform_location(program, "offset")
+
   local data = {
     counter = 1,
     program = program,
     vertex_array = vertex_array,
     vertex_buffer = vertex_buffer,
+    offset_uniform = offset_uniform,
   }
   return data
 end
 
-function update_thread_update(data)
+function update(data)
   local new_data = util.extend({}, data, {
     counter = data.counter + 1
   })
-  return new_data, (data.counter >= 100)
+  return new_data, (data.counter >= 1000)
 end
 
-function render_thread_render(data)
+function render(data)
   gl.clear_color(data.counter / 1000, 0.0, 0.0, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT)
 
   gl.use_program(data.program)
+
+  gl.uniform_float(data.offset_uniform, {math.sin(data.counter / 10), math.cos(data.counter / 10)})
 
   gl.bind_buffer(gl.ARRAY_BUFFER, data.vertex_buffer)
 

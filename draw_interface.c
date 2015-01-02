@@ -24,6 +24,20 @@ const char *get_string_arg(lua_State *L) {
     return str;
 }
 
+lua_Integer get_userdata_arg(lua_State *L) {
+    // TODO(emily): error checking
+    lua_Integer data = (lua_Integer)lua_touserdata(L, 1);
+    lua_remove(L, 1);
+    return data;
+}
+
+lua_Integer get_lua_len(lua_State *L, int index) {
+    lua_len(L, index);
+    lua_Integer len = lua_tointeger(L, -1);
+    lua_pop(L, 1);
+    return len;
+}
+
 typedef int (*draw_luafunction)(struct draw_data *data, lua_State *L);
 
 int drawfunction_wrapper(lua_State *L) {
@@ -328,6 +342,48 @@ int draw_lua_glBindVertexArray(struct draw_data *data, lua_State *L) {
     return 0;
 }
 
+int draw_lua_glGetUniformLocation(struct draw_data *data, lua_State *L) {
+    (void)data;
+
+    GLuint program = get_userdata_arg(L);
+    const char *name = get_string_arg(L);
+
+    GLint uniform = glGetUniformLocation(program, name);
+
+    lua_pushlightuserdata(L, (void*)(intptr_t)uniform);
+
+    return 1;
+}
+
+void (*floatUniformFunctions[4])(GLint, GLsizei, const GLfloat *) = {
+    glUniform1fv,
+    glUniform2fv,
+    glUniform3fv,
+    glUniform4fv
+};
+
+int draw_lua_glUniformFloat(struct draw_data *data, lua_State *L) {
+    (void)data;
+
+    GLint location = get_userdata_arg(L);
+    lua_Integer len = get_lua_len(L, 1);
+
+    GLfloat values[4];
+
+    for (int i = 0; i < len; i++) {
+        lua_pushinteger(L, i + 1);
+        lua_gettable(L, 1);
+        values[i] = lua_tonumber(L, -1);
+        lua_pop(L, 1);
+    }
+
+    lua_pop(L, 1);
+
+    floatUniformFunctions[len - 1](location, 1, values);
+
+    return 0;
+}
+
 int draw_lua_SDL_GL_SwapWindow(struct draw_data *data, lua_State *L) {
     (void)L;
 
@@ -360,6 +416,8 @@ void draw_interface_register(lua_State *L, struct draw_data *draw) {
     REGISTER_FUNC(BufferSubFloatData);
     REGISTER_FUNC(CreateVertexArray);
     REGISTER_FUNC(glBindVertexArray);
+    REGISTER_FUNC(glGetUniformLocation);
+    REGISTER_FUNC(glUniformFloat);
     REGISTER_FUNC(SDL_GL_SwapWindow);
 
     REGISTER_CONST(GL_COLOR_BUFFER_BIT);

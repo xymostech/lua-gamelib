@@ -101,15 +101,15 @@ void register_cfunction(lua_State *L, lua_CFunction func,
 int update(lua_State *L) {
     debugp("Updating...");
 
-    lua_getglobal(L, "update_thread_update");
+    lua_getglobal(L, "update");
     if (!lua_isfunction(L, -1)) {
-        fprintf(stderr, "Error: update_thread_update isn't a function\n");
+        fprintf(stderr, "Error: update isn't a function\n");
         return 1;
     }
 
     lua_insert(L, -2);
     if (handle_lua_error(lua_pcall(L, 1, 2, 0),
-                         "Error calling update_thread_update", L, 0)) {
+                         "Error calling update", L, 0)) {
         return 1;
     }
 
@@ -124,15 +124,15 @@ int update(lua_State *L) {
 void render(lua_State *L) {
     debugp("Rendering...");
 
-    lua_getglobal(L, "render_thread_render");
+    lua_getglobal(L, "render");
     if (!lua_isfunction(L, -1)) {
-        fprintf(stderr, "Error: render_thread_render isn't a function\n");
+        fprintf(stderr, "Error: render isn't a function\n");
         pthread_exit(NULL);
     }
 
     lua_insert(L, -2);
     handle_lua_error(lua_pcall(L, 1, 0, 0),
-                     "Error calling render_thread_render", L, 1);
+                     "Error calling render", L, 1);
 }
 
 void transfer(struct lua_data *lua_data) {
@@ -144,6 +144,9 @@ void *update_thread(void *data) {
     struct thread_data *d = (struct thread_data *)data;
 
     int done = 0;
+
+    unsigned int ticks = SDL_GetTicks();
+    int frame_count = 0;
 
     while (!done) {
         done = update(d->lua_data->updateL);
@@ -165,7 +168,11 @@ void *update_thread(void *data) {
             }
         }
 
-        SDL_Delay(16);
+        frame_count++;
+        if (SDL_GetTicks() > ticks + 1000) {
+            ticks = SDL_GetTicks();
+            debugp("%d frames per second", frame_count);
+        }
     }
 
     pthread_exit(NULL);

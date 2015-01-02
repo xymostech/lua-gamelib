@@ -18,6 +18,8 @@ copy_funcs = {
   BufferSubFloatData="buffer_sub_float_data",
   CreateVertexArray="create_vertex_array",
   glBindVertexArray="bind_vertex_array",
+  glGetUniformLocation="get_uniform_location",
+  glUniformFloat="uniform_float",
   SDL_GL_SwapWindow="swap_window",
 }
 
@@ -96,5 +98,15 @@ consts = {
 for _, name in ipairs(consts) do
   M[name] = _G["draw_GL_" .. name]
 end
+
+setmetatable(
+  M,
+  {
+    __index = function(_, value)
+      print("Error: Tried to access unknown opengl value:", value)
+      return nil
+    end
+  }
+)
 
 return M
