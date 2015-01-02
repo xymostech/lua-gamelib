@@ -8,7 +8,8 @@ OBJECTS = \
 	main.o \
 	draw.o \
 	lua.o \
-	draw_interface.o
+	draw_interface.o \
+	util.o
 
 -include $(OBJECTS:.o=.d)
 

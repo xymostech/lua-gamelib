@@ -11,16 +11,10 @@
 struct draw_data {
     SDL_Window *window;
     SDL_GLContext context;
-
-    GLuint program;
-    GLuint vertex_buffer;
-    GLuint vertex_array;
 };
 
 int draw_setup(struct draw_data *);
 void draw_cleanup(struct draw_data *);
 void draw_cleanup_wrapper(void *);
-
-void draw_draw();
 
 #endif
