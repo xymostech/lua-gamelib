@@ -140,9 +140,7 @@ void transfer(struct lua_data *lua_data) {
     lua_xmove(lua_data->updateL, lua_data->renderL, 1);
 }
 
-void *update_thread(void *data) {
-    struct thread_data *d = (struct thread_data *)data;
-
+void update_thread(struct thread_data *d) {
     int done = 0;
 
     unsigned int ticks = SDL_GetTicks();
@@ -174,8 +172,20 @@ void *update_thread(void *data) {
             debugp("%d frames per second", frame_count);
         }
     }
+}
 
-    pthread_exit(NULL);
+void cleanup(lua_State *L) {
+    debugp("Cleaning up...");
+
+    lua_getglobal(L, "cleanup");
+    if (!lua_isfunction(L, -1)) {
+        fprintf(stderr, "Error: cleanup isn't a function\n");
+        pthread_exit(NULL);
+    }
+
+    lua_insert(L, -2);
+    handle_lua_error(lua_pcall(L, 1, 0, 0),
+                     "Error calling cleanup", L, 1);
 }
 
 int main() {
@@ -210,6 +220,8 @@ int main() {
     data.draw_data = &draw_data;
 
     update_thread(&data);
+
+    cleanup(lua_data.renderL);
 
     pthread_cleanup_pop(1); // cleanup draw
     pthread_cleanup_pop(1); // cleanup lua
