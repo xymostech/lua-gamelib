@@ -47,13 +47,18 @@ end
 
 function cleanup(data)
   gl.delete_program(data.program)
-  -- TODO(emily): clean up vao and buffer
+
+  gl.delete_vertex_array(data.vertex_array)
+  gl.delete_buffer_object(data.vertex_buffer)
 end
 
 function update(data)
-  local new_data = util.extend({}, data, {
-    counter = data.counter + 1
-  })
+  local new_data = util.extend(
+    {}, data,
+    {
+      counter = data.counter + 1
+    }
+  )
   return new_data, (data.counter >= 1000)
 end
 

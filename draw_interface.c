@@ -255,6 +255,16 @@ int draw_lua_CreateBufferObject(struct draw_data *data, lua_State *L) {
     return 1;
 }
 
+int draw_lua_DeleteBufferObject(struct draw_data *data, lua_State *L) {
+    (void)data;
+
+    GLuint buffer = get_userdata_arg(L);
+
+    glDeleteBuffers(1, &buffer);
+
+    return 1;
+}
+
 int draw_lua_glBindBuffer(struct draw_data *data, lua_State *L) {
     (void)data;
 
@@ -326,6 +336,16 @@ int draw_lua_CreateVertexArray(struct draw_data *data, lua_State *L) {
     return 1;
 }
 
+int draw_lua_DeleteVertexArray(struct draw_data *data, lua_State *L) {
+    (void)data;
+
+    GLuint vertex_array = get_userdata_arg(L);
+
+    glDeleteVertexArrays(1, &vertex_array);
+
+    return 0;
+}
+
 int draw_lua_glBindVertexArray(struct draw_data *data, lua_State *L) {
     (void)data;
 
@@ -394,36 +414,59 @@ int draw_lua_SDL_GL_SwapWindow(struct draw_data *data, lua_State *L) {
 
 #define REGISTER_FUNC(func) \
     register_drawfunction(L, draw_lua_ ## func, draw, "draw_" #func)
+// E.g. register_drawfunction(L, draw_lua_glClear, draw, "draw_glClear")
 
 #define REGISTER_CONST(val) \
     register_drawconst(L, val, "draw_" #val)
+// E.g. register_drawconst(L, GL_TRUE, "draw_GL_TRUE")
 
 void draw_interface_register(lua_State *L, struct draw_data *draw) {
+    /***** FUNCTIONS *****/
+    // Clearing functions
     REGISTER_FUNC(glClearColor);
     REGISTER_FUNC(glClear);
-    REGISTER_FUNC(glUseProgram);
+
+    // Drawing functions
     REGISTER_FUNC(glDrawArrays);
+
+    // Vertex Attrib Array functions
     REGISTER_FUNC(glEnableVertexAttribArray);
     REGISTER_FUNC(glDisableVertexAttribArray);
     REGISTER_FUNC(glVertexAttribPointer);
+
+    // Shader and Program functions
     REGISTER_FUNC(CreateShaderFromFile);
     REGISTER_FUNC(glDeleteShader);
     REGISTER_FUNC(CreateProgramFromShaders);
     REGISTER_FUNC(glDeleteProgram);
+    REGISTER_FUNC(glUseProgram);
+
+    // Buffer object functions
     REGISTER_FUNC(CreateBufferObject);
+    REGISTER_FUNC(DeleteBufferObject);
     REGISTER_FUNC(glBindBuffer);
     REGISTER_FUNC(glBufferData);
     REGISTER_FUNC(BufferSubFloatData);
+
+    // Vertex array object functions
     REGISTER_FUNC(CreateVertexArray);
+    REGISTER_FUNC(DeleteVertexArray);
     REGISTER_FUNC(glBindVertexArray);
+
+    // Uniform functions
     REGISTER_FUNC(glGetUniformLocation);
     REGISTER_FUNC(glUniformFloat);
+
+    // SDL functions
     REGISTER_FUNC(SDL_GL_SwapWindow);
 
+    /***** CONSTANTS *****/
+    // Flags for glClear
     REGISTER_CONST(GL_COLOR_BUFFER_BIT);
     REGISTER_CONST(GL_DEPTH_BUFFER_BIT);
     REGISTER_CONST(GL_STENCIL_BUFFER_BIT);
 
+    // Drawing types for glDrawArrays
     REGISTER_CONST(GL_POINTS);
     REGISTER_CONST(GL_LINE_STRIP);
     REGISTER_CONST(GL_LINE_LOOP);
@@ -437,9 +480,11 @@ void draw_interface_register(lua_State *L, struct draw_data *draw) {
     REGISTER_CONST(GL_TRIANGLES_ADJACENCY);
     REGISTER_CONST(GL_PATCHES);
 
+    // Booleans
     REGISTER_CONST(GL_TRUE);
     REGISTER_CONST(GL_FALSE);
 
+    // Generic data types
     REGISTER_CONST(GL_BYTE);
     REGISTER_CONST(GL_UNSIGNED_BYTE);
     REGISTER_CONST(GL_SHORT);
@@ -454,6 +499,7 @@ void draw_interface_register(lua_State *L, struct draw_data *draw) {
     REGISTER_CONST(GL_UNSIGNED_INT_2_10_10_10_REV);
     REGISTER_CONST(GL_UNSIGNED_INT_10F_11F_11F_REV);
 
+    // Shader types
     REGISTER_CONST(GL_COMPUTE_SHADER);
     REGISTER_CONST(GL_VERTEX_SHADER);
     REGISTER_CONST(GL_TESS_CONTROL_SHADER);
@@ -461,6 +507,7 @@ void draw_interface_register(lua_State *L, struct draw_data *draw) {
     REGISTER_CONST(GL_GEOMETRY_SHADER);
     REGISTER_CONST(GL_FRAGMENT_SHADER);
 
+    // Buffer object types
     REGISTER_CONST(GL_ARRAY_BUFFER);
     REGISTER_CONST(GL_ATOMIC_COUNTER_BUFFER);
     REGISTER_CONST(GL_COPY_READ_BUFFER);
@@ -476,6 +523,7 @@ void draw_interface_register(lua_State *L, struct draw_data *draw) {
     REGISTER_CONST(GL_TRANSFORM_FEEDBACK_BUFFER);
     REGISTER_CONST(GL_UNIFORM_BUFFER);
 
+    // Buffer accessing modes
     REGISTER_CONST(GL_STREAM_DRAW);
     REGISTER_CONST(GL_STREAM_READ);
     REGISTER_CONST(GL_STREAM_COPY);
