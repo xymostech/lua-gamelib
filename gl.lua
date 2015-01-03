@@ -1,5 +1,6 @@
 local M = {}
 
+-- OpenGL, misc. functions exposed from C
 copy_funcs = {
   glClearColor="clear_color",
   glClear="clear",
@@ -29,6 +30,7 @@ for gl_name, lua_name in pairs(copy_funcs) do
   M[lua_name] = _G["draw_" .. gl_name]
 end
 
+-- OpenGL constants exposed from C
 consts = {
   "COLOR_BUFFER_BIT",
   "DEPTH_BUFFER_BIT",
@@ -99,6 +101,35 @@ consts = {
 
 for _, name in ipairs(consts) do
   M[name] = _G["draw_GL_" .. name]
+end
+
+-- Extra functions exposed
+function M.with_program(program, func)
+  M.use_program(program)
+
+  func()
+
+  M.use_program(nil)
+end
+
+function M.with_attribs(attribs, func)
+  for _, attrib in ipairs(attribs) do
+    M.enable_vertex_attrib_array(attrib)
+  end
+
+  func()
+
+  for _, attrib in ipairs(attribs) do
+    M.disable_vertex_attrib_array(attrib)
+  end
+end
+
+function M.with_buffer(target, buffer, func)
+  M.bind_buffer(target, buffer)
+
+  func()
+
+  M.bind_buffer(target, nil)
 end
 
 setmetatable(

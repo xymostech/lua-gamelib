@@ -63,28 +63,33 @@ function update(data)
 end
 
 function render(data)
-  gl.clear_color(data.counter / 1000, 0.0, 0.0, 1.0);
+  gl.clear_color(data.counter / 1000, 0.0, 0.0, 1.0)
   gl.clear(gl.COLOR_BUFFER_BIT)
 
-  gl.use_program(data.program)
+  gl.with_program(
+    data.program,
+    function()
+      gl.uniform_float(
+        data.offset_uniform,
+        {math.sin(data.counter / 10), math.cos(data.counter / 10)}
+      )
 
-  gl.uniform_float(data.offset_uniform, {math.sin(data.counter / 10), math.cos(data.counter / 10)})
+      gl.with_buffer(
+        gl.ARRAY_BUFFER, data.vertex_buffer,
+        function()
+          gl.with_attribs(
+            {0, 1},
+            function()
+              gl.vertex_attrib_pointer(0, 4, gl.DOUBLE, gl.FALSE, 0, 0)
+              gl.vertex_attrib_pointer(1, 4, gl.DOUBLE, gl.FALSE, 0, 4 * 3 * 8)
 
-  gl.bind_buffer(gl.ARRAY_BUFFER, data.vertex_buffer)
-
-  gl.enable_vertex_attrib_array(0);
-  gl.enable_vertex_attrib_array(1);
-  gl.vertex_attrib_pointer(0, 4, gl.DOUBLE, gl.FALSE, 0, 0)
-  gl.vertex_attrib_pointer(1, 4, gl.DOUBLE, gl.FALSE, 0, 4 * 3 * 8)
-
-  gl.draw_arrays(gl.TRIANGLES, 0, 3)
-
-  gl.disable_vertex_attrib_array(0)
-  gl.disable_vertex_attrib_array(1)
-
-  gl.bind_buffer(gl.ARRAY_BUFFER, nil)
-
-  gl.use_program(nil)
+              gl.draw_arrays(gl.TRIANGLES, 0, 3)
+            end
+          )
+        end
+      )
+    end
+  )
 
   gl.swap_window()
 end
