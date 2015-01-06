@@ -38,6 +38,24 @@ lua_Integer get_lua_len(lua_State *L, int index) {
     return len;
 }
 
+#define STRERROR_HELPER(error) \
+    case error: return #error; break
+
+const char *gl_strerror(GLenum err) {
+    switch (err) {
+        STRERROR_HELPER(GL_NO_ERROR);
+        STRERROR_HELPER(GL_INVALID_ENUM);
+        STRERROR_HELPER(GL_INVALID_VALUE);
+        STRERROR_HELPER(GL_INVALID_OPERATION);
+        STRERROR_HELPER(GL_INVALID_FRAMEBUFFER_OPERATION);
+        STRERROR_HELPER(GL_OUT_OF_MEMORY);
+        STRERROR_HELPER(GL_STACK_UNDERFLOW);
+        STRERROR_HELPER(GL_STACK_OVERFLOW);
+    }
+
+    return "Invalid error";
+}
+
 typedef int (*draw_luafunction)(struct draw_data *data, lua_State *L);
 
 int drawfunction_wrapper(lua_State *L) {
@@ -47,7 +65,18 @@ int drawfunction_wrapper(lua_State *L) {
     void *f = lua_touserdata(L, lua_upvalueindex(2));
     draw_luafunction func = (draw_luafunction)f;
 
-    return func(data, L);
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        printf("Had error: %d (%s) before calling function\n", err, gl_strerror(err));
+    }
+
+    int ret = func(data, L);
+
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        printf("Got error: %d (%s) during function\n", err, gl_strerror(err));
+    }
+
+    return ret;
 }
 
 void register_drawfunction(lua_State *L, draw_luafunction func,
@@ -375,6 +404,15 @@ int draw_lua_glGetUniformLocation(struct draw_data *data, lua_State *L) {
     return 1;
 }
 
+void read_into_float_array(lua_State *L, int table_index, int count, float *data) {
+    for (int i = 0; i < count; i++) {
+        lua_pushinteger(L, i + 1);
+        lua_gettable(L, table_index);
+        data[i] = lua_tonumber(L, -1);
+        lua_pop(L, 1);
+    }
+}
+
 void (*floatUniformFunctions[4])(GLint, GLsizei, const GLfloat *) = {
     glUniform1fv,
     glUniform2fv,
@@ -390,16 +428,80 @@ int draw_lua_glUniformFloat(struct draw_data *data, lua_State *L) {
 
     GLfloat values[4];
 
-    for (int i = 0; i < len; i++) {
-        lua_pushinteger(L, i + 1);
-        lua_gettable(L, 1);
-        values[i] = lua_tonumber(L, -1);
-        lua_pop(L, 1);
-    }
+    read_into_float_array(L, 1, len, values);
 
     lua_pop(L, 1);
 
     floatUniformFunctions[len - 1](location, 1, values);
+
+    return 0;
+}
+
+void (*floatMatrixUniformFunctions[3][3])(GLint, GLsizei, GLboolean, const GLfloat *) = {
+    {glUniformMatrix2fv,   glUniformMatrix2x3fv, glUniformMatrix2x4fv},
+    {glUniformMatrix3x2fv, glUniformMatrix3fv,   glUniformMatrix3x4fv},
+    {glUniformMatrix4x2fv, glUniformMatrix4x3fv, glUniformMatrix4fv  }
+};
+
+int draw_lua_glUniformMatrixFloat(struct draw_data *data, lua_State *L) {
+    (void)data;
+
+    GLint location = get_userdata_arg(L);
+    lua_Integer width = get_integer_arg(L);
+    lua_Integer height = get_integer_arg(L);
+
+    GLfloat values[16];
+
+    read_into_float_array(L, 1, width * height, values);
+
+    for (int i = 0; i < 16; i++) {
+        printf("%f ", values[i]);
+    }
+    printf("\n");
+
+    lua_pop(L, 1);
+
+    floatMatrixUniformFunctions[width - 2][height - 2](location, 1, GL_FALSE, values);
+
+    return 0;
+}
+
+int draw_lua_glEnable(struct draw_data *data, lua_State *L) {
+    (void)data;
+
+    GLenum cap = get_integer_arg(L);
+
+    glEnable(cap);
+
+    return 0;
+}
+
+int draw_lua_glDisable(struct draw_data *data, lua_State *L) {
+    (void)data;
+
+    GLenum cap = get_integer_arg(L);
+
+    glDisable(cap);
+
+    return 0;
+}
+
+int draw_lua_glCullFace(struct draw_data *data, lua_State *L) {
+    (void)data;
+
+    GLenum mode = get_integer_arg(L);
+
+    glCullFace(mode);
+
+    return 0;
+}
+
+int draw_lua_glFrontFace(struct draw_data *data, lua_State *L) {
+    (void)data;
+
+    GLenum mode = get_integer_arg(L);
+
+    glFrontFace(mode);
 
     return 0;
 }
@@ -456,6 +558,15 @@ void draw_interface_register(lua_State *L, struct draw_data *draw) {
     // Uniform functions
     REGISTER_FUNC(glGetUniformLocation);
     REGISTER_FUNC(glUniformFloat);
+    REGISTER_FUNC(glUniformMatrixFloat);
+
+    // Enable/Disable functions
+    REGISTER_FUNC(glEnable);
+    REGISTER_FUNC(glDisable);
+
+    // Culling functions
+    REGISTER_FUNC(glCullFace);
+    REGISTER_FUNC(glFrontFace);
 
     // SDL functions
     REGISTER_FUNC(SDL_GL_SwapWindow);
@@ -533,4 +644,50 @@ void draw_interface_register(lua_State *L, struct draw_data *draw) {
     REGISTER_CONST(GL_DYNAMIC_DRAW);
     REGISTER_CONST(GL_DYNAMIC_READ);
     REGISTER_CONST(GL_DYNAMIC_COPY);
+
+    // glEnable/glDisable capabilities
+    REGISTER_CONST(GL_BLEND);
+    REGISTER_CONST(GL_CLIP_DISTANCE0);
+    REGISTER_CONST(GL_CLIP_DISTANCE1);
+    REGISTER_CONST(GL_CLIP_DISTANCE2);
+    REGISTER_CONST(GL_CLIP_DISTANCE3);
+    REGISTER_CONST(GL_CLIP_DISTANCE4);
+    REGISTER_CONST(GL_CLIP_DISTANCE5);
+    REGISTER_CONST(GL_CLIP_DISTANCE6);
+    REGISTER_CONST(GL_CLIP_DISTANCE7);
+    REGISTER_CONST(GL_COLOR_LOGIC_OP);
+    REGISTER_CONST(GL_CULL_FACE);
+    REGISTER_CONST(GL_DEBUG_OUTPUT);
+    REGISTER_CONST(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    REGISTER_CONST(GL_DEPTH_CLAMP);
+    REGISTER_CONST(GL_DEPTH_TEST);
+    REGISTER_CONST(GL_DITHER);
+    REGISTER_CONST(GL_FRAMEBUFFER_SRGB);
+    REGISTER_CONST(GL_LINE_SMOOTH);
+    REGISTER_CONST(GL_MULTISAMPLE);
+    REGISTER_CONST(GL_POLYGON_OFFSET_FILL);
+    REGISTER_CONST(GL_POLYGON_OFFSET_LINE);
+    REGISTER_CONST(GL_POLYGON_OFFSET_POINT);
+    REGISTER_CONST(GL_POLYGON_SMOOTH);
+    REGISTER_CONST(GL_PRIMITIVE_RESTART);
+    REGISTER_CONST(GL_PRIMITIVE_RESTART_FIXED_INDEX);
+    REGISTER_CONST(GL_RASTERIZER_DISCARD);
+    REGISTER_CONST(GL_SAMPLE_ALPHA_TO_COVERAGE);
+    REGISTER_CONST(GL_SAMPLE_ALPHA_TO_ONE);
+    REGISTER_CONST(GL_SAMPLE_COVERAGE);
+    REGISTER_CONST(GL_SAMPLE_SHADING);
+    REGISTER_CONST(GL_SAMPLE_MASK);
+    REGISTER_CONST(GL_SCISSOR_TEST);
+    REGISTER_CONST(GL_STENCIL_TEST);
+    REGISTER_CONST(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+    REGISTER_CONST(GL_PROGRAM_POINT_SIZE);
+
+    // Cull face parameters
+    REGISTER_CONST(GL_FRONT);
+    REGISTER_CONST(GL_BACK);
+    REGISTER_CONST(GL_FRONT_AND_BACK);
+
+    // Polygon orientations
+    REGISTER_CONST(GL_CW);
+    REGISTER_CONST(GL_CCW);
 }

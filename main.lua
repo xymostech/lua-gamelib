@@ -1,39 +1,163 @@
 local gl = require 'gl'
 local util = require 'util'
 
+local vertex_data = {
+  0.25,  0.25, -1.25, 1.0,
+  0.25, -0.25, -1.25, 1.0,
+ -0.25,  0.25, -1.25, 1.0,
+
+  0.25, -0.25, -1.25, 1.0,
+ -0.25, -0.25, -1.25, 1.0,
+ -0.25,  0.25, -1.25, 1.0,
+
+  0.25,  0.25, -2.75, 1.0,
+ -0.25,  0.25, -2.75, 1.0,
+  0.25, -0.25, -2.75, 1.0,
+
+  0.25, -0.25, -2.75, 1.0,
+ -0.25,  0.25, -2.75, 1.0,
+ -0.25, -0.25, -2.75, 1.0,
+
+ -0.25,  0.25, -1.25, 1.0,
+ -0.25, -0.25, -1.25, 1.0,
+ -0.25, -0.25, -2.75, 1.0,
+
+ -0.25,  0.25, -1.25, 1.0,
+ -0.25, -0.25, -2.75, 1.0,
+ -0.25,  0.25, -2.75, 1.0,
+
+  0.25,  0.25, -1.25, 1.0,
+  0.25, -0.25, -2.75, 1.0,
+  0.25, -0.25, -1.25, 1.0,
+
+  0.25,  0.25, -1.25, 1.0,
+  0.25,  0.25, -2.75, 1.0,
+  0.25, -0.25, -2.75, 1.0,
+
+  0.25,  0.25, -2.75, 1.0,
+  0.25,  0.25, -1.25, 1.0,
+ -0.25,  0.25, -1.25, 1.0,
+
+  0.25,  0.25, -2.75, 1.0,
+ -0.25,  0.25, -1.25, 1.0,
+ -0.25,  0.25, -2.75, 1.0,
+
+  0.25, -0.25, -2.75, 1.0,
+ -0.25, -0.25, -1.25, 1.0,
+  0.25, -0.25, -1.25, 1.0,
+
+  0.25, -0.25, -2.75, 1.0,
+ -0.25, -0.25, -2.75, 1.0,
+ -0.25, -0.25, -1.25, 1.0,
+}
+
+local color_data = {
+  0.0, 0.0, 1.0, 1.0,
+  0.0, 0.0, 1.0, 1.0,
+  0.0, 0.0, 1.0, 1.0,
+
+  0.0, 0.0, 1.0, 1.0,
+  0.0, 0.0, 1.0, 1.0,
+  0.0, 0.0, 1.0, 1.0,
+
+  0.8, 0.8, 0.8, 1.0,
+  0.8, 0.8, 0.8, 1.0,
+  0.8, 0.8, 0.8, 1.0,
+
+  0.8, 0.8, 0.8, 1.0,
+  0.8, 0.8, 0.8, 1.0,
+  0.8, 0.8, 0.8, 1.0,
+
+  0.0, 1.0, 0.0, 1.0,
+  0.0, 1.0, 0.0, 1.0,
+  0.0, 1.0, 0.0, 1.0,
+
+  0.0, 1.0, 0.0, 1.0,
+  0.0, 1.0, 0.0, 1.0,
+  0.0, 1.0, 0.0, 1.0,
+
+  0.5, 0.5, 0.0, 1.0,
+  0.5, 0.5, 0.0, 1.0,
+  0.5, 0.5, 0.0, 1.0,
+
+  0.5, 0.5, 0.0, 1.0,
+  0.5, 0.5, 0.0, 1.0,
+  0.5, 0.5, 0.0, 1.0,
+
+  1.0, 0.0, 0.0, 1.0,
+  1.0, 0.0, 0.0, 1.0,
+  1.0, 0.0, 0.0, 1.0,
+
+  1.0, 0.0, 0.0, 1.0,
+  1.0, 0.0, 0.0, 1.0,
+  1.0, 0.0, 0.0, 1.0,
+
+  0.0, 1.0, 1.0, 1.0,
+  0.0, 1.0, 1.0, 1.0,
+  0.0, 1.0, 1.0, 1.0,
+
+  0.0, 1.0, 1.0, 1.0,
+  0.0, 1.0, 1.0, 1.0,
+  0.0, 1.0, 1.0, 1.0,
+}
+
 function setup_data(vertex_buffer)
-  gl.bind_buffer(gl.ARRAY_BUFFER, vertex_buffer)
+  gl.with_buffer(
+    gl.ARRAY_BUFFER, vertex_buffer,
+    function()
+      gl.buffer_data(
+        gl.ARRAY_BUFFER,
+        (#vertex_data + #color_data) * 8, gl.STATIC_DRAW
+      )
 
-  gl.buffer_data(gl.ARRAY_BUFFER, 4 * 6 * 8, gl.STATIC_DRAW)
+      gl.buffer_sub_float_data(gl.ARRAY_BUFFER, 0, vertex_data)
 
-  gl.buffer_sub_float_data(gl.ARRAY_BUFFER, 0, {
-     0.75,  0.75, 0.0, 1.0,
-     0.75, -0.75, 0.0, 1.0,
-    -0.75, -0.75, 0.0, 1.0,
-     1.0,   0.0,  0.0, 1.0,
-     0.0,   1.0,  0.0, 1.0,
-     0.0,   0.0,  1.0, 1.0,
-  })
+      gl.buffer_sub_float_data(gl.ARRAY_BUFFER, #vertex_data * 8, color_data)
+    end
+  )
+end
 
-  gl.bind_buffer(gl.ARRAY_BUFFER, nil)
+function make_perspective_matrix(frustum_scale, z_near, z_far)
+  return {
+    frustum_scale, 0, 0, 0,
+    0, frustum_scale, 0, 0,
+    0, 0, (z_near + z_far) / (z_near - z_far), -1,
+    0, 0, (2 * z_near * z_far) / (z_near - z_far), 0
+  }
 end
 
 function startup()
-  vertex_shader = gl.create_shader_from_file(gl.VERTEX_SHADER, "vertex.shader")
-  fragment_shader = gl.create_shader_from_file(gl.FRAGMENT_SHADER, "fragment.shader")
+  local vertex_shader = gl.create_shader_from_file(gl.VERTEX_SHADER, "vertex.shader")
+  local fragment_shader = gl.create_shader_from_file(gl.FRAGMENT_SHADER, "fragment.shader")
 
-  program = gl.create_program_from_shaders({vertex_shader, fragment_shader})
+  local program = gl.create_program_from_shaders({vertex_shader, fragment_shader})
 
   gl.delete_shader(vertex_shader)
   gl.delete_shader(fragment_shader)
 
-  vertex_array = gl.create_vertex_array()
+  local vertex_array = gl.create_vertex_array()
   gl.bind_vertex_array(vertex_array)
 
-  vertex_buffer = gl.create_buffer_object()
+  local vertex_buffer = gl.create_buffer_object()
   setup_data(vertex_buffer)
 
-  offset_uniform = gl.get_uniform_location(program, "offset")
+  local offset_uniform = gl.get_uniform_location(program, "offset")
+
+  gl.enable(gl.CULL_FACE)
+  gl.cull_face(gl.BACK)
+  gl.front_face(gl.CW)
+
+  local perspective_uniform = gl.get_uniform_location(program, "perspective_matrix")
+
+  gl.with_program(
+    program,
+    function()
+      gl.uniform_matrix_float(
+        perspective_uniform, 4, 4,
+        make_perspective_matrix(1, 0.5, 3.0)
+      )
+    end
+  )
 
   local data = {
     counter = 1,
@@ -63,7 +187,7 @@ function update(data)
 end
 
 function render(data)
-  gl.clear_color(data.counter / 1000, 0.0, 0.0, 1.0)
+  gl.clear_color(0.0, 0.0, 0.0, 1.0)
   gl.clear(gl.COLOR_BUFFER_BIT)
 
   gl.with_program(
@@ -81,9 +205,9 @@ function render(data)
             {0, 1},
             function()
               gl.vertex_attrib_pointer(0, 4, gl.DOUBLE, gl.FALSE, 0, 0)
-              gl.vertex_attrib_pointer(1, 4, gl.DOUBLE, gl.FALSE, 0, 4 * 3 * 8)
+              gl.vertex_attrib_pointer(1, 4, gl.DOUBLE, gl.FALSE, 0, #vertex_data * 8)
 
-              gl.draw_arrays(gl.TRIANGLES, 0, 3)
+              gl.draw_arrays(gl.TRIANGLES, 0, #vertex_data / 4)
             end
           )
         end
