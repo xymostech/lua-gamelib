@@ -4,104 +4,54 @@ local util = require 'util'
 local vertex_data = {
   0.25,  0.25, -1.25, 1.0,
   0.25, -0.25, -1.25, 1.0,
- -0.25,  0.25, -1.25, 1.0,
-
-  0.25, -0.25, -1.25, 1.0,
  -0.25, -0.25, -1.25, 1.0,
  -0.25,  0.25, -1.25, 1.0,
 
   0.25,  0.25, -2.75, 1.0,
- -0.25,  0.25, -2.75, 1.0,
-  0.25, -0.25, -2.75, 1.0,
-
-  0.25, -0.25, -2.75, 1.0,
- -0.25,  0.25, -2.75, 1.0,
- -0.25, -0.25, -2.75, 1.0,
-
- -0.25,  0.25, -1.25, 1.0,
- -0.25, -0.25, -1.25, 1.0,
- -0.25, -0.25, -2.75, 1.0,
-
- -0.25,  0.25, -1.25, 1.0,
- -0.25, -0.25, -2.75, 1.0,
- -0.25,  0.25, -2.75, 1.0,
-
-  0.25,  0.25, -1.25, 1.0,
-  0.25, -0.25, -2.75, 1.0,
-  0.25, -0.25, -1.25, 1.0,
-
-  0.25,  0.25, -1.25, 1.0,
-  0.25,  0.25, -2.75, 1.0,
-  0.25, -0.25, -2.75, 1.0,
-
-  0.25,  0.25, -2.75, 1.0,
-  0.25,  0.25, -1.25, 1.0,
- -0.25,  0.25, -1.25, 1.0,
-
-  0.25,  0.25, -2.75, 1.0,
- -0.25,  0.25, -1.25, 1.0,
- -0.25,  0.25, -2.75, 1.0,
-
-  0.25, -0.25, -2.75, 1.0,
- -0.25, -0.25, -1.25, 1.0,
-  0.25, -0.25, -1.25, 1.0,
-
   0.25, -0.25, -2.75, 1.0,
  -0.25, -0.25, -2.75, 1.0,
- -0.25, -0.25, -1.25, 1.0,
+ -0.25,  0.25, -2.75, 1.0,
 }
 
 local color_data = {
   0.0, 0.0, 1.0, 1.0,
-  0.0, 0.0, 1.0, 1.0,
-  0.0, 0.0, 1.0, 1.0,
-
-  0.0, 0.0, 1.0, 1.0,
-  0.0, 0.0, 1.0, 1.0,
-  0.0, 0.0, 1.0, 1.0,
-
   0.8, 0.8, 0.8, 1.0,
-  0.8, 0.8, 0.8, 1.0,
-  0.8, 0.8, 0.8, 1.0,
-
-  0.8, 0.8, 0.8, 1.0,
-  0.8, 0.8, 0.8, 1.0,
-  0.8, 0.8, 0.8, 1.0,
-
   0.0, 1.0, 0.0, 1.0,
-  0.0, 1.0, 0.0, 1.0,
-  0.0, 1.0, 0.0, 1.0,
-
-  0.0, 1.0, 0.0, 1.0,
-  0.0, 1.0, 0.0, 1.0,
-  0.0, 1.0, 0.0, 1.0,
-
-  0.5, 0.5, 0.0, 1.0,
-  0.5, 0.5, 0.0, 1.0,
-  0.5, 0.5, 0.0, 1.0,
-
-  0.5, 0.5, 0.0, 1.0,
-  0.5, 0.5, 0.0, 1.0,
   0.5, 0.5, 0.0, 1.0,
 
   1.0, 0.0, 0.0, 1.0,
-  1.0, 0.0, 0.0, 1.0,
-  1.0, 0.0, 0.0, 1.0,
-
-  1.0, 0.0, 0.0, 1.0,
-  1.0, 0.0, 0.0, 1.0,
-  1.0, 0.0, 0.0, 1.0,
-
   0.0, 1.0, 1.0, 1.0,
-  0.0, 1.0, 1.0, 1.0,
-  0.0, 1.0, 1.0, 1.0,
-
-  0.0, 1.0, 1.0, 1.0,
-  0.0, 1.0, 1.0, 1.0,
-  0.0, 1.0, 1.0, 1.0,
+  0.0, 0.5, 0.5, 1.0,
+  0.5, 0.0, 0.5, 1.0,
 }
 
-function setup_data(vertex_buffer)
+--    7-----4
+--   /|    /|
+--  / 6---/-5
+-- 3-----0 /
+-- |/    |/
+-- 2-----1
+local index_data = {
+  0, 1, 2,
+  2, 3, 0,
+
+  4, 7, 6,
+  6, 5, 4,
+
+  0, 4, 5,
+  5, 1, 0,
+
+  7, 3, 2,
+  2, 6, 7,
+
+  7, 4, 0,
+  0, 3, 7,
+
+  2, 1, 5,
+  5, 6, 2,
+}
+
+function setup_data(vertex_buffer, index_buffer)
   gl.with_buffer(
     gl.ARRAY_BUFFER, vertex_buffer,
     function()
@@ -110,9 +60,20 @@ function setup_data(vertex_buffer)
         (#vertex_data + #color_data) * 8, gl.STATIC_DRAW
       )
 
-      gl.buffer_sub_float_data(gl.ARRAY_BUFFER, 0, vertex_data)
+      gl.buffer_sub_double_data(gl.ARRAY_BUFFER, 0, vertex_data)
+      gl.buffer_sub_double_data(gl.ARRAY_BUFFER, #vertex_data * 8, color_data)
+    end
+  )
 
-      gl.buffer_sub_float_data(gl.ARRAY_BUFFER, #vertex_data * 8, color_data)
+  gl.with_buffer(
+    gl.ELEMENT_ARRAY_BUFFER, index_buffer,
+    function()
+      gl.buffer_data(
+        gl.ELEMENT_ARRAY_BUFFER,
+        #index_data * 4, gl.STATIC_DRAW
+      )
+
+      gl.buffer_sub_unsigned_int_data(gl.ELEMENT_ARRAY_BUFFER, 0, index_data)
     end
   )
 end
@@ -139,7 +100,8 @@ function startup()
   gl.bind_vertex_array(vertex_array)
 
   local vertex_buffer = gl.create_buffer_object()
-  setup_data(vertex_buffer)
+  local index_buffer = gl.create_buffer_object()
+  setup_data(vertex_buffer, index_buffer)
 
   local offset_uniform = gl.get_uniform_location(program, "offset")
 
@@ -164,6 +126,7 @@ function startup()
     program = program,
     vertex_array = vertex_array,
     vertex_buffer = vertex_buffer,
+    index_buffer = index_buffer,
     offset_uniform = offset_uniform,
   }
   return data
@@ -195,19 +158,24 @@ function render(data)
     function()
       gl.uniform_float(
         data.offset_uniform,
-        {math.sin(data.counter / 10), math.cos(data.counter / 10)}
+        {math.sin(data.counter / 100), math.cos(data.counter / 100)}
       )
 
       gl.with_buffer(
         gl.ARRAY_BUFFER, data.vertex_buffer,
         function()
-          gl.with_attribs(
-            {0, 1},
+          gl.with_buffer(
+            gl.ELEMENT_ARRAY_BUFFER, data.index_buffer,
             function()
-              gl.vertex_attrib_pointer(0, 4, gl.DOUBLE, gl.FALSE, 0, 0)
-              gl.vertex_attrib_pointer(1, 4, gl.DOUBLE, gl.FALSE, 0, #vertex_data * 8)
+              gl.with_attribs(
+                {0, 1},
+                function()
+                  gl.vertex_attrib_pointer(0, 4, gl.DOUBLE, gl.FALSE, 0, 0)
+                  gl.vertex_attrib_pointer(1, 4, gl.DOUBLE, gl.FALSE, 0, #vertex_data * 8)
 
-              gl.draw_arrays(gl.TRIANGLES, 0, #vertex_data / 4)
+                  gl.draw_elements(gl.TRIANGLES, #index_data, gl.UNSIGNED_INT, 0);
+                end
+              )
             end
           )
         end

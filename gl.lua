@@ -6,6 +6,7 @@ copy_funcs = {
   glClear="clear",
 
   glDrawArrays="draw_arrays",
+  glDrawElements="draw_elements",
 
   glEnableVertexAttribArray="enable_vertex_attrib_array",
   glDisableVertexAttribArray="disable_vertex_attrib_array",
@@ -21,7 +22,8 @@ copy_funcs = {
   DeleteBufferObject="delete_buffer_object",
   glBindBuffer="bind_buffer",
   glBufferData="buffer_data",
-  BufferSubFloatData="buffer_sub_float_data",
+  BufferSubDoubleData="buffer_sub_double_data",
+  BufferSubUnsignedIntData="buffer_sub_unsigned_int_data",
 
   CreateVertexArray="create_vertex_array",
   DeleteVertexArray="delete_vertex_array",
@@ -161,6 +163,14 @@ for _, name in ipairs(consts) do
 end
 
 -- Extra functions exposed
+function M.with_vertex_array(vao, func)
+  M.bind_vertex_array(vao)
+
+  func()
+
+  M.bind_vertex_array(nil)
+end
+
 function M.with_program(program, func)
   M.use_program(program)
 

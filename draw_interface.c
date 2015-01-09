@@ -3,6 +3,7 @@
 #include "debug.h"
 #include "util.h"
 
+// Helper functions
 lua_Integer get_integer_arg(lua_State *L) {
     // TODO(emily): error checking
     lua_Integer x = lua_tointeger(L, 1);
@@ -36,6 +37,36 @@ lua_Integer get_lua_len(lua_State *L, int index) {
     lua_Integer len = lua_tointeger(L, -1);
     lua_pop(L, 1);
     return len;
+}
+
+void read_into_float_array(lua_State *L, int table_index, int count,
+                           float *data) {
+    for (int i = 0; i < count; i++) {
+        lua_pushinteger(L, i + 1);
+        lua_gettable(L, table_index);
+        data[i] = lua_tonumber(L, -1);
+        lua_pop(L, 1);
+    }
+}
+
+void read_into_double_array(lua_State *L, int table_index, int count,
+                            double *data) {
+    for (int i = 0; i < count; i++) {
+        lua_pushinteger(L, i + 1);
+        lua_gettable(L, table_index);
+        data[i] = lua_tonumber(L, -1);
+        lua_pop(L, 1);
+    }
+}
+
+void read_into_unsigned_int_array(lua_State *L, int table_index, int count,
+                                  unsigned int *data) {
+    for (int i = 0; i < count; i++) {
+        lua_pushinteger(L, i + 1);
+        lua_gettable(L, table_index);
+        data[i] = lua_tointeger(L, -1);
+        lua_pop(L, 1);
+    }
 }
 
 #define STRERROR_HELPER(error) \
@@ -142,6 +173,19 @@ int draw_lua_glDrawArrays(struct draw_data *data, lua_State *L) {
     GLsizei count = get_integer_arg(L);
 
     glDrawArrays(mode, first, count);
+
+    return 0;
+}
+
+int draw_lua_glDrawElements(struct draw_data *data, lua_State *L) {
+    (void)data;
+
+    GLenum mode = get_integer_arg(L);
+    GLsizei count = get_integer_arg(L);
+    GLenum type = get_integer_arg(L);
+    GLsizeiptr indices = get_integer_arg(L);
+
+    glDrawElements(mode, count, type, (const GLvoid *)indices);
 
     return 0;
 }
@@ -326,29 +370,40 @@ int draw_lua_glBufferData(struct draw_data *data, lua_State *L) {
     return 0;
 }
 
-int draw_lua_BufferSubFloatData(struct draw_data *data, lua_State *L) {
+int draw_lua_BufferSubDoubleData(struct draw_data *data, lua_State *L) {
     (void)data;
 
     GLenum target = get_integer_arg(L);
     GLintptr offset = get_integer_arg(L);
 
-    lua_len(L, 1);
-    lua_Integer count = lua_tointeger(L, -1);
-    lua_pop(L, 1);
+    lua_Integer count = get_lua_len(L, 1);
 
     double *buffer_data = malloc(count * sizeof(*buffer_data));
 
-    lua_pushnil(L);
-    while (lua_next(L, 1) != 0) {
-        if (lua_isnumber(L, -2)) {
-            buffer_data[lua_tointeger(L, -2) - 1] = lua_tonumber(L, -1);
-        }
-        lua_pop(L, 1);
-    }
+    read_into_double_array(L, 1, count, buffer_data);
 
-    glBufferSubData(target, offset, count * sizeof(*buffer_data), (void*)buffer_data);
+    glBufferSubData(target, offset, count * sizeof(*buffer_data),
+                    (void*)buffer_data);
 
     free(buffer_data);
+
+    return 0;
+}
+
+int draw_lua_BufferSubUnsignedIntData(struct draw_data *data, lua_State *L) {
+    (void)data;
+
+    GLenum target = get_integer_arg(L);
+    GLintptr offset = get_integer_arg(L);
+
+    lua_Integer count = get_lua_len(L, 1);
+
+    unsigned int *buffer_data = malloc(count * sizeof(*buffer_data));
+
+    read_into_unsigned_int_array(L, 1, count, buffer_data);
+
+    glBufferSubData(target, offset, count * sizeof(*buffer_data),
+                    (void*)buffer_data);
 
     return 0;
 }
@@ -402,15 +457,6 @@ int draw_lua_glGetUniformLocation(struct draw_data *data, lua_State *L) {
     lua_pushlightuserdata(L, (void*)(intptr_t)uniform);
 
     return 1;
-}
-
-void read_into_float_array(lua_State *L, int table_index, int count, float *data) {
-    for (int i = 0; i < count; i++) {
-        lua_pushinteger(L, i + 1);
-        lua_gettable(L, table_index);
-        data[i] = lua_tonumber(L, -1);
-        lua_pop(L, 1);
-    }
 }
 
 void (*floatUniformFunctions[4])(GLint, GLsizei, const GLfloat *) = {
@@ -530,6 +576,7 @@ void draw_interface_register(lua_State *L, struct draw_data *draw) {
 
     // Drawing functions
     REGISTER_FUNC(glDrawArrays);
+    REGISTER_FUNC(glDrawElements);
 
     // Vertex Attrib Array functions
     REGISTER_FUNC(glEnableVertexAttribArray);
@@ -548,7 +595,8 @@ void draw_interface_register(lua_State *L, struct draw_data *draw) {
     REGISTER_FUNC(DeleteBufferObject);
     REGISTER_FUNC(glBindBuffer);
     REGISTER_FUNC(glBufferData);
-    REGISTER_FUNC(BufferSubFloatData);
+    REGISTER_FUNC(BufferSubDoubleData);
+    REGISTER_FUNC(BufferSubUnsignedIntData);
 
     // Vertex array object functions
     REGISTER_FUNC(CreateVertexArray);
