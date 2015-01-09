@@ -96,12 +96,25 @@ function startup()
   gl.delete_shader(vertex_shader)
   gl.delete_shader(fragment_shader)
 
-  local vertex_array = gl.create_vertex_array()
-  gl.bind_vertex_array(vertex_array)
-
   local vertex_buffer = gl.create_buffer_object()
   local index_buffer = gl.create_buffer_object()
   setup_data(vertex_buffer, index_buffer)
+
+  local vertex_array = gl.create_vertex_array()
+  gl.with_vertex_array(
+    vertex_array,
+    function()
+      gl.bind_buffer(gl.ARRAY_BUFFER, vertex_buffer)
+
+      gl.enable_vertex_attrib_array(0)
+      gl.vertex_attrib_pointer(0, 4, gl.DOUBLE, gl.FALSE, 0, 0)
+
+      gl.enable_vertex_attrib_array(1)
+      gl.vertex_attrib_pointer(1, 4, gl.DOUBLE, gl.FALSE, 0, #vertex_data * 8)
+
+      gl.bind_buffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer)
+    end
+  )
 
   local offset_uniform = gl.get_uniform_location(program, "offset")
 
@@ -161,23 +174,10 @@ function render(data)
         {math.sin(data.counter / 100), math.cos(data.counter / 100)}
       )
 
-      gl.with_buffer(
-        gl.ARRAY_BUFFER, data.vertex_buffer,
+      gl.with_vertex_array(
+        data.vertex_array,
         function()
-          gl.with_buffer(
-            gl.ELEMENT_ARRAY_BUFFER, data.index_buffer,
-            function()
-              gl.with_attribs(
-                {0, 1},
-                function()
-                  gl.vertex_attrib_pointer(0, 4, gl.DOUBLE, gl.FALSE, 0, 0)
-                  gl.vertex_attrib_pointer(1, 4, gl.DOUBLE, gl.FALSE, 0, #vertex_data * 8)
-
-                  gl.draw_elements(gl.TRIANGLES, #index_data, gl.UNSIGNED_INT, 0);
-                end
-              )
-            end
-          )
+          gl.draw_elements(gl.TRIANGLES, #index_data, gl.UNSIGNED_INT, 0);
         end
       )
     end
