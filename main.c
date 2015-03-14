@@ -188,13 +188,17 @@ void cleanup(lua_State *L) {
                      "Error calling cleanup", L, 1);
 }
 
-int main() {
+int main(int argc, const char *argv[]) {
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s <main lua file>", argv[0]);
+    }
+
     int err;
 
     struct lua_data lua_data;
     struct draw_data draw_data;
 
-    if ((err = lua_setup(&lua_data, &draw_data)) != 0) {
+    if ((err = lua_setup(&lua_data, &draw_data, argv[1])) != 0) {
         pthread_exit(NULL);
     }
     pthread_cleanup_push(lua_cleanup_wrapper, &lua_data);

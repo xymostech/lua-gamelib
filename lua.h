@@ -12,7 +12,7 @@ struct lua_data {
 
 struct draw_data;
 
-int lua_setup(struct lua_data *, struct draw_data *);
+int lua_setup(struct lua_data *, struct draw_data *, const char *);
 void lua_cleanup(struct lua_data *);
 void lua_cleanup_wrapper(void *);
 

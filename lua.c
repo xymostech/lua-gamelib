@@ -9,7 +9,7 @@ void print_lua_error(const char *prefix, lua_State *L) {
     fprintf(stderr, "%s: %s\n", prefix, err);
 }
 
-int lua_setup(struct lua_data *data, struct draw_data *draw) {
+int lua_setup(struct lua_data *data, struct draw_data *draw, const char *main_file) {
     lua_State *L = luaL_newstate();
     if (!L) {
         fprintf(stderr, "Error making lua state");
@@ -19,7 +19,7 @@ int lua_setup(struct lua_data *data, struct draw_data *draw) {
 
     draw_interface_register(L, draw);
 
-    int load_error = luaL_loadfile(L, "main.lua");
+    int load_error = luaL_loadfile(L, main_file);
     if (load_error != LUA_OK) {
         print_lua_error("Error loading", L);
         lua_close(L);
