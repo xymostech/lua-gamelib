@@ -246,8 +246,10 @@ int draw_lua_CreateShaderFromFile(struct draw_data *data, lua_State *L) {
     GLint status;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
     if (status == GL_FALSE) {
-        fprintf(stderr, "shader bad: %s\n", file_name);
-        // TODO(emily): error checking
+        GLchar log[512];
+        glGetShaderInfoLog(shader, 512, NULL, log);
+
+        fprintf(stderr, "Error compiling shader %s:\n%s\n", file_name, log);
     }
 
     free(file_data);
