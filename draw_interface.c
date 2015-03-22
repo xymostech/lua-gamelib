@@ -96,15 +96,19 @@ int drawfunction_wrapper(lua_State *L) {
     void *f = lua_touserdata(L, lua_upvalueindex(2));
     draw_luafunction func = (draw_luafunction)f;
 
+    const char *func_name = (const char *)lua_touserdata(L, lua_upvalueindex(3));
+
     GLenum err;
     while ((err = glGetError()) != GL_NO_ERROR) {
-        fprintf(stderr, "Had error: %d (%s) before calling function\n", err, gl_strerror(err));
+        fprintf(stderr, "Had error: %d (%s) before calling function '%s'\n",
+               err, gl_strerror(err), func_name);
     }
 
     int ret = func(data, L);
 
     while ((err = glGetError()) != GL_NO_ERROR) {
-        printf(stderr, "Got error: %d (%s) during function\n", err, gl_strerror(err));
+        fprintf(stderr, "Got error: %d (%s) during function '%s'\n",
+               err, gl_strerror(err), func_name);
     }
 
     return ret;
@@ -114,8 +118,9 @@ void register_drawfunction(lua_State *L, draw_luafunction func,
                            struct draw_data *data, const char *name) {
     lua_pushlightuserdata(L, (void*)data);
     lua_pushlightuserdata(L, (void*)func);
+    lua_pushlightuserdata(L, (void*)name);
 
-    lua_pushcclosure(L, drawfunction_wrapper, 2);
+    lua_pushcclosure(L, drawfunction_wrapper, 3);
 
     lua_setglobal(L, name);
 }
