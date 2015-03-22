@@ -61,7 +61,7 @@ int draw_setup(struct draw_data *data) {
         SDL_Quit();
         return 1;
     }
-    printf("Got OpenGL Version: %d.%d\n", major, minor);
+    fprintf(stderr, "Got OpenGL Version: %d.%d\n", major, minor);
 
     data->window = window;
     data->context = context;

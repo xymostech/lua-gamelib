@@ -98,13 +98,13 @@ int drawfunction_wrapper(lua_State *L) {
 
     GLenum err;
     while ((err = glGetError()) != GL_NO_ERROR) {
-        printf("Had error: %d (%s) before calling function\n", err, gl_strerror(err));
+        fprintf(stderr, "Had error: %d (%s) before calling function\n", err, gl_strerror(err));
     }
 
     int ret = func(data, L);
 
     while ((err = glGetError()) != GL_NO_ERROR) {
-        printf("Got error: %d (%s) during function\n", err, gl_strerror(err));
+        printf(stderr, "Got error: %d (%s) during function\n", err, gl_strerror(err));
     }
 
     return ret;
@@ -285,7 +285,7 @@ int draw_lua_CreateProgramFromShaders(struct draw_data *data, lua_State *L) {
     glGetProgramiv(program, GL_LINK_STATUS, &status);
     if (status == GL_FALSE) {
         // TODO(emily): error checking
-        fprintf(stderr, "Bad linking");
+        fprintf(stderr, "Bad linking\n");
     }
 
     lua_pushnil(L);
@@ -499,11 +499,6 @@ int draw_lua_glUniformMatrixFloat(struct draw_data *data, lua_State *L) {
     GLfloat values[16];
 
     read_into_float_array(L, 1, width * height, values);
-
-    for (int i = 0; i < 16; i++) {
-        printf("%f ", values[i]);
-    }
-    printf("\n");
 
     lua_pop(L, 1);
 
