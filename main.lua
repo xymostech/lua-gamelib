@@ -88,8 +88,8 @@ function make_perspective_matrix(frustum_scale, z_near, z_far)
 end
 
 function startup()
-  local vertex_shader = gl.create_shader_from_file(gl.VERTEX_SHADER, "vertex.shader")
-  local fragment_shader = gl.create_shader_from_file(gl.FRAGMENT_SHADER, "fragment.shader")
+  local vertex_shader = gl.create_shader_from_file(gl.VERTEX_SHADER, "main.vertex.glsl")
+  local fragment_shader = gl.create_shader_from_file(gl.FRAGMENT_SHADER, "main.fragment.glsl")
 
   local program = gl.create_program_from_shaders({vertex_shader, fragment_shader})
 
