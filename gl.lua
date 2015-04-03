@@ -7,6 +7,7 @@ copy_funcs = {
 
   glDrawArrays="draw_arrays",
   glDrawElements="draw_elements",
+  glDrawElementsBaseVertex="draw_elements_base_vertex",
 
   glEnableVertexAttribArray="enable_vertex_attrib_array",
   glDisableVertexAttribArray="disable_vertex_attrib_array",

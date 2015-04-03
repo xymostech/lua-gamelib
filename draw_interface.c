@@ -195,6 +195,20 @@ int draw_lua_glDrawElements(struct draw_data *data, lua_State *L) {
     return 0;
 }
 
+int draw_lua_glDrawElementsBaseVertex(struct draw_data *data, lua_State *L) {
+    (void)data;
+
+    GLenum mode = get_integer_arg(L);
+    GLsizei count = get_integer_arg(L);
+    GLenum type = get_integer_arg(L);
+    GLsizeiptr indices = get_integer_arg(L);
+    GLint basevertex = get_integer_arg(L);
+
+    glDrawElementsBaseVertex(mode, count, type, (GLvoid *)indices, basevertex);
+
+    return 0;
+}
+
 int draw_lua_glEnableVertexAttribArray(struct draw_data *data, lua_State *L) {
     (void)data;
 
@@ -579,6 +593,7 @@ void draw_interface_register(lua_State *L, struct draw_data *draw) {
     // Drawing functions
     REGISTER_FUNC(glDrawArrays);
     REGISTER_FUNC(glDrawElements);
+    REGISTER_FUNC(glDrawElementsBaseVertex);
 
     // Vertex Attrib Array functions
     REGISTER_FUNC(glEnableVertexAttribArray);
