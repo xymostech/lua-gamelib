@@ -160,6 +160,11 @@ function startup()
   gl.cull_face(gl.BACK)
   gl.front_face(gl.CW)
 
+  gl.enable(gl.DEPTH_TEST)
+  gl.depth_mask(gl.TRUE)
+  gl.depth_func(gl.LEQUAL)
+  gl.depth_range(0.0, 1.0)
+
   local perspective_uniform = gl.get_uniform_location(program, "perspective_matrix")
   local offset_uniform = gl.get_uniform_location(program, "offset")
 
@@ -205,7 +210,8 @@ end
 
 function render(data)
   gl.clear_color(0.0, 0.0, 0.0, 1.0)
-  gl.clear(gl.COLOR_BUFFER_BIT)
+  gl.clear_depth(1.0);
+  gl.clear(bit32.bor(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT))
 
   gl.with_program(
     data.program,

@@ -3,6 +3,7 @@ local M = {}
 -- OpenGL, misc. functions exposed from C
 copy_funcs = {
   glClearColor="clear_color",
+  glClearDepth="clear_depth",
   glClear="clear",
 
   glDrawArrays="draw_arrays",
@@ -39,6 +40,10 @@ copy_funcs = {
 
   glCullFace="cull_face",
   glFrontFace="front_face",
+
+  glDepthFunc="depth_func",
+  glDepthRange="depth_range",
+  glDepthMask="depth_mask",
 
   SDL_GL_SwapWindow="swap_window",
 }
@@ -157,6 +162,15 @@ consts = {
 
   "CW",
   "CCW",
+
+  "NEVER",
+  "LESS",
+  "EQUAL",
+  "LEQUAL",
+  "GREATER",
+  "NOTEQUAL",
+  "GEQUAL",
+  "ALWAYS",
 }
 
 for _, name in ipairs(consts) do

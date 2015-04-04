@@ -144,6 +144,16 @@ int draw_lua_glClearColor(struct draw_data *data, lua_State *L) {
     return 0;
 }
 
+int draw_lua_glClearDepth(struct draw_data *data, lua_State *L) {
+    (void)data;
+
+    GLdouble depth = get_float_arg(L);
+
+    glClearDepth(depth);
+
+    return 0;
+}
+
 int draw_lua_glClear(struct draw_data *data, lua_State *L) {
     (void)data;
 
@@ -568,6 +578,37 @@ int draw_lua_glFrontFace(struct draw_data *data, lua_State *L) {
     return 0;
 }
 
+int draw_lua_glDepthFunc(struct draw_data *data, lua_State *L) {
+    (void)data;
+
+    GLenum func = get_integer_arg(L);
+
+    glDepthFunc(func);
+
+    return 0;
+}
+
+int draw_lua_glDepthRange(struct draw_data *data, lua_State *L) {
+    (void)data;
+
+    GLdouble nearVal = get_float_arg(L);
+    GLdouble farVal = get_float_arg(L);
+
+    glDepthRange(nearVal, farVal);
+
+    return 0;
+}
+
+int draw_lua_glDepthMask(struct draw_data *data, lua_State *L) {
+    (void)data;
+
+    GLboolean flag = get_integer_arg(L);
+
+    glDepthMask(flag);
+
+    return 0;
+}
+
 int draw_lua_SDL_GL_SwapWindow(struct draw_data *data, lua_State *L) {
     (void)L;
 
@@ -588,6 +629,7 @@ void draw_interface_register(lua_State *L, struct draw_data *draw) {
     /***** FUNCTIONS *****/
     // Clearing functions
     REGISTER_FUNC(glClearColor);
+    REGISTER_FUNC(glClearDepth);
     REGISTER_FUNC(glClear);
 
     // Drawing functions
@@ -632,6 +674,11 @@ void draw_interface_register(lua_State *L, struct draw_data *draw) {
     // Culling functions
     REGISTER_FUNC(glCullFace);
     REGISTER_FUNC(glFrontFace);
+
+    // Depth parameter functions
+    REGISTER_FUNC(glDepthFunc);
+    REGISTER_FUNC(glDepthRange);
+    REGISTER_FUNC(glDepthMask);
 
     // SDL functions
     REGISTER_FUNC(SDL_GL_SwapWindow);
@@ -755,4 +802,14 @@ void draw_interface_register(lua_State *L, struct draw_data *draw) {
     // Polygon orientations
     REGISTER_CONST(GL_CW);
     REGISTER_CONST(GL_CCW);
+
+    // Depth functions
+    REGISTER_CONST(GL_NEVER);
+    REGISTER_CONST(GL_LESS);
+    REGISTER_CONST(GL_EQUAL);
+    REGISTER_CONST(GL_LEQUAL);
+    REGISTER_CONST(GL_GREATER);
+    REGISTER_CONST(GL_NOTEQUAL);
+    REGISTER_CONST(GL_GEQUAL);
+    REGISTER_CONST(GL_ALWAYS);
 }
