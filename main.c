@@ -170,6 +170,7 @@ void update_thread(struct thread_data *d) {
         if (SDL_GetTicks() > ticks + 1000) {
             ticks = SDL_GetTicks();
             debugp("%d frames per second", frame_count);
+            frame_count = 0;
         }
     }
 }
