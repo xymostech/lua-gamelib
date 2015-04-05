@@ -1,28 +1,17 @@
 local gl = require 'gl'
 local util = require 'util'
+local glm = require 'glm'
 
-local obj1_vertex_data = {
-  2.0, 1.0, 0.0, 1.0,
-  2.0, 0.0, -1.0, 1.0,
-  2.0, -1.0, 0.0, 1.0,
-  2.0, 0.0, 1.0, 1.0,
+local vertex_data = {
+  1.0,  1.0,  1.0, 1.0,
+  1.0, -1.0,  1.0, 1.0,
+ -1.0, -1.0,  1.0, 1.0,
+ -1.0,  1.0,  1.0, 1.0,
 
-  -2.0, 1.0, 0.0, 1.0,
-  -2.0, 0.0, -1.0, 1.0,
-  -2.0, -1.0, 0.0, 1.0,
-  -2.0, 0.0, 1.0, 1.0,
-}
-
-local obj2_vertex_data = {
-  1.0, 2.0, 0.0, 1.0,
-  0.0, 2.0, -1.0, 1.0,
- -1.0, 2.0, 0.0, 1.0,
-  0.0, 2.0, 1.0, 1.0,
-
-  1.0, -2.0, 0.0, 1.0,
-  0.0, -2.0, -1.0, 1.0,
- -1.0, -2.0, 0.0, 1.0,
-  0.0, -2.0, 1.0, 1.0,
+  1.0,  1.0, -1.0, 1.0,
+  1.0, -1.0, -1.0, 1.0,
+ -1.0, -1.0, -1.0, 1.0,
+ -1.0,  1.0, -1.0, 1.0,
 }
 
 local color_data = {
@@ -103,8 +92,7 @@ function setup_data(vertex_buffer, index_buffer)
       write_arrays_to_buffer(
         gl.ARRAY_BUFFER,
         gl.DOUBLE,
-        obj1_vertex_data, obj2_vertex_data,
-        color_data, color_data
+        vertex_data, color_data
       )
     end
   )
@@ -150,7 +138,7 @@ function startup()
 
       gl.enable_vertex_attrib_array(1)
       gl.vertex_attrib_pointer(
-        1, 4, gl.DOUBLE, gl.FALSE, 0, (#obj1_vertex_data + #obj2_vertex_data) * 8)
+        1, 4, gl.DOUBLE, gl.FALSE, 0, #vertex_data * 8)
 
       gl.bind_buffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer)
     end
@@ -166,7 +154,7 @@ function startup()
   gl.depth_range(0.0, 1.0)
 
   local perspective_uniform = gl.get_uniform_location(program, "perspective_matrix")
-  local offset_uniform = gl.get_uniform_location(program, "offset")
+  local model_matrix_uniform = gl.get_uniform_location(program, "model_matrix")
 
   gl.with_program(
     program,
@@ -185,7 +173,7 @@ function startup()
     vertex_buffer = vertex_buffer,
     index_buffer = index_buffer,
     uniforms = {
-      offset = offset_uniform
+      model_matrix = model_matrix_uniform
     }
   }
   return data
@@ -219,19 +207,15 @@ function render(data)
       gl.with_vertex_array(
         data.vertex_array,
         function()
-          gl.uniform_float(
-            data.uniforms.offset, {0, 0, -4}
-          )
+          local mat = glm.mat4(1.0)
+          mat = mat:translate(0, 0, -4)
+          mat = mat:rotate(0, 0, 1, data.counter / 100)
+          mat = mat:translate(0, 2, 0)
+          mat = mat:rotate(0, 1, 0, data.counter / 100)
+          mat:to_uniform(data.uniforms.model_matrix)
 
           gl.draw_elements_base_vertex(
             gl.TRIANGLES, #index_data, gl.UNSIGNED_INT, 0, 0)
-
-          gl.uniform_float(
-            data.uniforms.offset, {0, 0, -6}
-          )
-
-          gl.draw_elements_base_vertex(
-            gl.TRIANGLES, #index_data, gl.UNSIGNED_INT, 0, 8)
         end
       )
     end
